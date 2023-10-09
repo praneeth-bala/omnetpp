@@ -89,9 +89,8 @@ class SIM_API cSimbricksProtocol : public cParsimSynchronizer
 
     virtual void processReceivedBuffer(cCommBuffer *buffer, int tag, int sourceProcId);
     virtual void processOutgoingMessage(cMessage *msg, const SendOptions& options, int procId, int moduleId, int gateId, void *data) override;
-    virtual void receiveBlocking();
     virtual void SetupInterconnections ();
-    virtual void SendSyncEvent (int systemId);
+    virtual void SendSyncEvent (int systemId, simtime_t at);
     virtual uint8_t Poll (int systemId);
     virtual void ReceivedPacket (const void *buf, size_t len, int systemId);
     virtual volatile union SimbricksProtoNetMsg* AllocTx (int systemId);

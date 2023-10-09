@@ -69,7 +69,7 @@ OBJS_PARSIM=\
     $O/parsim/ccommbufferbase.o $O/parsim/cfilecomm.o \
     $O/parsim/cfilecommbuffer.o $O/parsim/cnamedpipecomm-win.o $O/parsim/cnamedpipecomm.o $O/parsim/parsimutil.o \
     $O/parsim/creceivedexception.o $O/parsim/cmpicomm.o $O/parsim/cmpicommbuffer.o \
-    $O/parsim/csimbrickscomm.o $O/parsim/csimbricksprot.o
+    $O/parsim/csimbricksprot.o
 
 OBJS= $(OBJS_STD)
 

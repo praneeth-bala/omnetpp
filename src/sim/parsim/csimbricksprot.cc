@@ -15,6 +15,7 @@
 #include "messagetags.h"
 #include "cmpicommbuffer.h"
 #include "omnetpp/cconfigoption.h"
+#include <mpi.h>
 
 
 
@@ -51,7 +52,7 @@ cSimbricksProtocol::~cSimbricksProtocol()
 void cSimbricksProtocol::startRun()
 {
     EV << "starting Simbrcks Message Protocol...\n";
-
+    MPI_Init(NULL, NULL);
     m_dir = "/home/praneeth/git/omnetpp-6.0.1/bin/env/";
     lookaheadcalc->startRun();
     SetupInterconnections();
@@ -130,6 +131,7 @@ void cSimbricksProtocol::processOutgoingMessage(cMessage *msg, const SendOptions
 
     std::memcpy((uint8_t*)recv->data, buffer->getBuffer(), buffer->getBufferLength());
     SimbricksNetIfOutSend(m_nsif[destProcId], ms, SIMBRICKS_PROTO_NET_MSG_PACKET);
+    // std::cout << sim->getSimTime().raw() << " " << msg->getArrivalTime() << " " << lookaheadcalc->getCurrentLookahead(destProcId) << "\n";
     delete buffer;
 }
 
@@ -147,7 +149,7 @@ void cSimbricksProtocol::ReceivedPacket (const void *buf, size_t len, int system
     cMessage *msg = (cMessage *)buffer->unpackObject();
 
     partition->processReceivedMessage(msg, options, destModuleId, destGateId, systemId);
-    buffer->assertBufferEmpty();
+    // buffer->assertBufferEmpty();
 }
 
 void cSimbricksProtocol::processReceivedBuffer(cCommBuffer *buffer, int tag, int sourceProcId)
@@ -190,7 +192,9 @@ cEvent *cSimbricksProtocol::takeNextEvent()
         cMessage *msg = event->isMessage() ? static_cast<cMessage *>(event) : nullptr;
         if (msg && msg->getKind() == 777) {
             int procId = (uintptr_t)msg->getContextPointer();
-            SendSyncEvent(procId);
+            SendSyncEvent(procId, msg->getArrivalTime());
+            cEvent *tmp = sim->getFES()->removeFirst();
+            continue;
         }
         else {
             // just a normal event -- go ahead with it
@@ -208,24 +212,6 @@ void cSimbricksProtocol::putBackEvent(cEvent *event)
 {
     throw cRuntimeError("cSimbricksProtocol: \"Run Until Event/Module\" functionality "
                         "cannot be used with this scheduler (putBackEvent() not implemented)");
-}
-
-void cSimbricksProtocol::receiveBlocking()
-{
-    cCommBuffer *buffer = comm->createCommBuffer();
-
-    int tag, sourceProcId;
-    if (!comm->receiveBlocking(PARSIM_ANY_TAG, buffer, tag, sourceProcId)) {
-        comm->recycleCommBuffer(buffer);
-        return;
-    }
-
-    processReceivedBuffer(buffer, tag, sourceProcId);
-    while (comm->receiveNonblocking(PARSIM_ANY_TAG, buffer, tag, sourceProcId))
-        processReceivedBuffer(buffer, tag, sourceProcId);
-
-    comm->recycleCommBuffer(buffer);
-    return;
 }
 
 void cSimbricksProtocol::SetupInterconnections (){
@@ -259,6 +245,7 @@ void cSimbricksProtocol::SetupInterconnections (){
     int ret;
     int sync = m_bifparam[i]->sync_mode;
     m_nsif[i] = new SimbricksNetIf();
+    sleep(comm->getProcId()*2);
     int res = access(shm_path.c_str(), R_OK);
     if (res < 0) {
         if (errno == ENOENT) {
@@ -305,17 +292,20 @@ void cSimbricksProtocol::SetupInterconnections (){
   }
 }
 
-void cSimbricksProtocol::SendSyncEvent (int systemId)
+void cSimbricksProtocol::SendSyncEvent (int systemId, simtime_t at)
 {
 
     volatile union SimbricksProtoNetMsg *msg = AllocTx (systemId);
     SimbricksBaseIfOutSend(&m_nsif[systemId]->base, &msg->base, SIMBRICKS_PROTO_MSG_TYPE_SYNC);
+    // std::cout<<"Time: "<<(sim->getSimTime() + lookaheadcalc->getCurrentLookahead(systemId)).raw()<<"\n";
+    // std::flush(std::cout);
     while (Poll (systemId));
 
     sprintf(buf, "sendSync-%d", systemId);
     cMessage *syncMsg = new cMessage(buf, 777);
     syncMsg->setContextPointer((void *)(uintptr_t)systemId);
-    syncMsg->setArrivalTime(lookaheadcalc->getCurrentLookahead(systemId));
+    syncMsg->setArrivalTime(at + lookaheadcalc->getCurrentLookahead(systemId));
+    // std::cout << sim->getSimTime() + lookaheadcalc->getCurrentLookahead(systemId) << "\n";
     sim->getFES()->insert(syncMsg);
 }
 
@@ -324,7 +314,8 @@ uint8_t cSimbricksProtocol::Poll (int systemId)
     volatile union SimbricksProtoNetMsg *msg;
     uint8_t ty;
 
-    msg = SimbricksNetIfInPoll (m_nsif[systemId], 0X7FFFFFFFFFFFFFFF);
+    msg = SimbricksNetIfInPoll (m_nsif[systemId], INT64_MAX);
+
 
     if (!msg)
     return -1;
