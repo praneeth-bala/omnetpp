@@ -29,9 +29,10 @@ char *cCommBufferBase::getBuffer() const
     return mBuffer;
 }
 
-void cCommBufferBase::setBuffer(char* buf)
+void cCommBufferBase::setBuffer(char* buf, int siz)
 {
     mBuffer = buf;
+    mBufferSize = siz;
     return;
 }
 

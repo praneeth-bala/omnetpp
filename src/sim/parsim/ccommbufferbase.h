@@ -53,7 +53,7 @@ class SIM_API cCommBufferBase : public cCommBuffer
      * Returns the buffer after packing.
      */
     char *getBuffer() const;
-    void setBuffer(char* buf);
+    void setBuffer(char* buf, int siz);
 
     /**
      * Returns the size of the buffer.

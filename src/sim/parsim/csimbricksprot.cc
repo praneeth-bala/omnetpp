@@ -13,9 +13,7 @@
 #include "cproxygate.h"
 #include "csimbricksprot.h"
 #include "messagetags.h"
-#include "cmpicommbuffer.h"
 #include "omnetpp/cconfigoption.h"
-#include <mpi.h>
 
 
 
@@ -28,7 +26,6 @@ extern cConfigOption *CFGID_PARSIM_DEBUG;
 
 std::map<uint32_t, SimbricksNetIf*> cSimbricksProtocol::m_nsif;
 std::map<uint32_t, SimbricksBaseIfParams*> cSimbricksProtocol::m_bifparam;
-std::map<uint32_t, uint64_t> cSimbricksProtocol::m_pollDelay;
 std::string cSimbricksProtocol::m_dir;
 
 simtime_t a;
@@ -52,14 +49,14 @@ cSimbricksProtocol::~cSimbricksProtocol()
 void cSimbricksProtocol::startRun()
 {
     EV << "starting Simbrcks Message Protocol...\n";
-    MPI_Init(NULL, NULL);
     m_dir = "/home/praneeth/git/omnetpp-6.0.1/bin/env/";
     lookaheadcalc->startRun();
+    buffer = new cMemCommBuffer();
     SetupInterconnections();
 
     for (int i = 0; i < comm->getNumPartitions(); i++) {
         if (i != comm->getProcId()) {
-            sprintf(buf, "sendSync-%d", i);
+            // sprintf(buf, "sendSync-%d", i);
             cMessage *syncMsg = new cMessage(buf, 777);
             syncMsg->setContextPointer((void *)(uintptr_t)i);
             syncMsg->setArrivalTime(0.0);
@@ -105,7 +102,7 @@ volatile union SimbricksProtoNetMsg* cSimbricksProtocol::AllocTx (int systemId)
 {
   volatile union SimbricksProtoNetMsg *msg;
   do {
-    msg = SimbricksNetIfOutAlloc (m_nsif[systemId], sim->getSimTime().raw());
+    msg = SimbricksNetIfOutAlloc (m_nsif[systemId], sim->getSimTime().inUnit(SIMTIME_PS));
   } while (!msg);
 
   return msg;
@@ -119,28 +116,29 @@ void cSimbricksProtocol::processOutgoingMessage(cMessage *msg, const SendOptions
 
     ms = AllocTx (destProcId);
     recv = &ms->packet;
-    cMPICommBuffer *buffer = new cMPICommBuffer();
-
+    
+    buffer->reset();
+    buffer->setBuffer((char*)recv->data, INT32_MAX);
     buffer->pack(destModuleId);
     buffer->pack(destGateId);
     packOptions(buffer, options);
     buffer->packObject(msg);
 
-    recv->len = buffer->getBufferLength();
+    recv->len = buffer->getMessageSize();
     recv->port = 0;
 
-    std::memcpy((uint8_t*)recv->data, buffer->getBuffer(), buffer->getBufferLength());
+    // std::memcpy((uint8_t*)recv->data, buffer->getBuffer(), buffer->getMessageSize());
     SimbricksNetIfOutSend(m_nsif[destProcId], ms, SIMBRICKS_PROTO_NET_MSG_PACKET);
-    // std::cout << sim->getSimTime().raw() << " " << msg->getArrivalTime() << " " << lookaheadcalc->getCurrentLookahead(destProcId) << "\n";
-    delete buffer;
+    // std::cout << sim->getSimTime().inUnit(SIMTIME_PS) << " " << msg->getArrivalTime() << " " << lookaheadcalc->getCurrentLookahead(destProcId) << "\n";
+    // delete buffer;
 }
 
 void cSimbricksProtocol::ReceivedPacket (const void *buf, size_t len, int systemId)
 { 
     int destModuleId;
     int destGateId;
-    cMPICommBuffer *buffer = new cMPICommBuffer();
-    buffer->setBuffer((char*)buf);
+    buffer->reset();
+    buffer->setBuffer((char*)buf, INT32_MAX);
     buffer->setMessageSize(len);
 
     buffer->unpack(destModuleId);
@@ -149,32 +147,7 @@ void cSimbricksProtocol::ReceivedPacket (const void *buf, size_t len, int system
     cMessage *msg = (cMessage *)buffer->unpackObject();
 
     partition->processReceivedMessage(msg, options, destModuleId, destGateId, systemId);
-    // buffer->assertBufferEmpty();
-}
-
-void cSimbricksProtocol::processReceivedBuffer(cCommBuffer *buffer, int tag, int sourceProcId)
-{
-    // int destModuleId;
-    // int destGateId;
-    // simtime_t eit;
-
-    // switch (tag) {
-
-    //     case TAG_CMESSAGE: {
-    //         buffer->unpack(destModuleId);
-    //         buffer->unpack(destGateId);
-    //         SendOptions options = unpackOptions(buffer);
-    //         cMessage *msg = (cMessage *)buffer->unpackObject();
-    //         partition->processReceivedMessage(msg, options, destModuleId, destGateId, sourceProcId);
-    //         break;
-    //     }
-
-    //     default: {
-    //         partition->processReceivedBuffer(buffer, tag, sourceProcId);
-    //         break;
-    //     }
-    // }
-    // buffer->assertBufferEmpty();
+    buffer->assertBufferEmpty();
 }
 
 cEvent *cSimbricksProtocol::takeNextEvent()
@@ -193,7 +166,7 @@ cEvent *cSimbricksProtocol::takeNextEvent()
         if (msg && msg->getKind() == 777) {
             int procId = (uintptr_t)msg->getContextPointer();
             SendSyncEvent(procId, msg->getArrivalTime());
-            cEvent *tmp = sim->getFES()->removeFirst();
+            delete sim->getFES()->removeFirst();
             continue;
         }
         else {
@@ -225,9 +198,8 @@ void cSimbricksProtocol::SetupInterconnections (){
     SimbricksNetIfDefaultParams(m_bifparam[i]);
 
     m_bifparam[i]->sync_mode = (enum SimbricksBaseIfSyncMode)1;
-    m_bifparam[i]->sync_interval = lookaheadcalc->getCurrentLookahead(i).raw();
-    m_pollDelay[i] = m_bifparam[i]->sync_interval;
-    m_bifparam[i]->link_latency = lookaheadcalc->getCurrentLookahead(i).raw();
+    m_bifparam[i]->sync_interval = lookaheadcalc->getCurrentLookahead(i).inUnit(SIMTIME_PS);
+    m_bifparam[i]->link_latency = lookaheadcalc->getCurrentLookahead(i).inUnit(SIMTIME_PS);
 
     int a,b;
     if(systemId>i){
@@ -242,7 +214,6 @@ void cSimbricksProtocol::SetupInterconnections (){
     std::string shm_path = m_dir+"sim_shm"+std::to_string(a)+"_"+std::to_string(b), sock_path=m_dir+"sim_socket"+std::to_string(a)+"_"+std::to_string(b);
     m_bifparam[i]->sock_path = sock_path.c_str();
 
-    int ret;
     int sync = m_bifparam[i]->sync_mode;
     m_nsif[i] = new SimbricksNetIf();
     sleep(comm->getProcId()*2);
@@ -286,7 +257,7 @@ void cSimbricksProtocol::SetupInterconnections (){
         }
     }
     else{
-      ret = SimbricksNetIfInit(m_nsif[i], m_bifparam[i], m_bifparam[i]->sock_path, &sync);
+      SimbricksNetIfInit(m_nsif[i], m_bifparam[i], m_bifparam[i]->sock_path, &sync);
     }
     // m_pollEvent[i] = Simulator::ScheduleNow (&cSimbricksProtocol::PollEvent, this, i);
   }
@@ -297,11 +268,11 @@ void cSimbricksProtocol::SendSyncEvent (int systemId, simtime_t at)
 
     volatile union SimbricksProtoNetMsg *msg = AllocTx (systemId);
     SimbricksBaseIfOutSend(&m_nsif[systemId]->base, &msg->base, SIMBRICKS_PROTO_MSG_TYPE_SYNC);
-    // std::cout<<"Time: "<<(sim->getSimTime() + lookaheadcalc->getCurrentLookahead(systemId)).raw()<<"\n";
+    // std::cout<<"Time: "<<(sim->getSimTime() + lookaheadcalc->getCurrentLookahead(systemId)).inUnit(SIMTIME_PS)<<"\n";
     // std::flush(std::cout);
     while (Poll (systemId));
 
-    sprintf(buf, "sendSync-%d", systemId);
+    // sprintf(buf, "sendSync-%d", systemId);
     cMessage *syncMsg = new cMessage(buf, 777);
     syncMsg->setContextPointer((void *)(uintptr_t)systemId);
     syncMsg->setArrivalTime(at + lookaheadcalc->getCurrentLookahead(systemId));

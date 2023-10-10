@@ -18,6 +18,7 @@
 #define __OMNETPP_CSIMBRICKSSYNC_H
 
 #include "omnetpp/cmessage.h"
+#include "cmemcommbuffer.h"
 #include "cparsimsynchr.h"
 #include <string>
 #include <map>
@@ -42,9 +43,9 @@ class SIM_API cSimbricksProtocol : public cParsimSynchronizer
     bool debug;
     char buf[30];
     cNMPLookahead *lookaheadcalc;
+    cMemCommBuffer *buffer;
     static std::map<uint32_t, SimbricksNetIf*> m_nsif;
     static std::map<uint32_t, SimbricksBaseIfParams*> m_bifparam;
-    static std::map<uint32_t, uint64_t> m_pollDelay;
     static std::string m_dir;
 
     /**
@@ -86,8 +87,6 @@ class SIM_API cSimbricksProtocol : public cParsimSynchronizer
      */
     SendOptions unpackOptions(cCommBuffer *buffer);
     void packOptions(cCommBuffer *buffer, const SendOptions& options);
-
-    virtual void processReceivedBuffer(cCommBuffer *buffer, int tag, int sourceProcId);
     virtual void processOutgoingMessage(cMessage *msg, const SendOptions& options, int procId, int moduleId, int gateId, void *data) override;
     virtual void SetupInterconnections ();
     virtual void SendSyncEvent (int systemId, simtime_t at);
