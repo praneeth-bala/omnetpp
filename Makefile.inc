@@ -11,8 +11,8 @@ OMNETPP_EDITION = Academic Public License -- NOT FOR COMMERCIAL USE
 #
 # Optional features (set to "yes" to enable the feature)
 #
-WITH_QTENV = yes
-WITH_OSG = yes
+WITH_QTENV = no
+WITH_OSG = no
 WITH_OSGEARTH = no
 WITH_NETBUILDER = yes
 WITH_LIBXML = no
@@ -126,13 +126,13 @@ SANITIZE_FLAGS =  -fsanitize=leak,address,undefined
 CFLAGS_DEBUG =  -O0 -Wall -glldb -fstandalone-debug
 CFLAGS_RELEASE =  -O3 -DNDEBUG=1 -ffp-contract=off
 CFLAGS += $(CFLAGS_EXTRA)  -MMD -MP -MF $@.d  -fPIC  -Wno-deprecated-register -Wno-unused-function -fno-omit-frame-pointer $(DEFINES)
-CXXFLAGS = -std=c++17
+CXXFLAGS = 
 LDFLAG_LIBPATH = -L
 LDFLAG_INCLUDE = -Wl,-u,
 LDFLAG_LIB = -l
 LDFLAG_IMPLIB = -Wl,--out-implib,
 LDFLAG_IMPDEF = -Wl,--output-def,
-LDFLAGS += $(LDFLAGS_EXTRA) -Wl,-rpath,$(OMNETPP_LIB_DIR) -Wl,-rpath,$(OMNETPP_TOOLS_DIR)/lib -Wl,-rpath,.  -Wl,--export-dynamic $(LDFLAG_LIBPATH)$(OMNETPP_LIB_DIR)
+LDFLAGS += $(LDFLAGS_EXTRA)  -Wl,-rpath,$(OMNETPP_LIB_DIR) -Wl,-rpath,$(OMNETPP_TOOLS_DIR)/lib -Wl,-rpath,.  -Wl,--export-dynamic $(LDFLAG_LIBPATH)$(OMNETPP_LIB_DIR)
 WHOLE_ARCHIVE_ON = -Wl,--whole-archive
 WHOLE_ARCHIVE_OFF = -Wl,--no-whole-archive
 AS_NEEDED_ON = -Wl,--as-needed
@@ -150,26 +150,26 @@ STRIP = strip
 LN = ln -f
 MKPATH = mkdir -p
 SHLIB_POSTPROCESS = opp_shlib_postprocess
-SWIG = not found
-QMAKE = /usr/bin/qmake
-MOC=/usr/lib/qt5/bin/moc
-UIC=/usr/lib/qt5/bin/uic
-RCC=/usr/lib/qt5/bin/rcc
+SWIG = swig
+QMAKE = 
+MOC=
+UIC=
+RCC=
 
 HAVE_DLOPEN = 1
-SYS_LIBS = -lstdc++ 
-QT_CFLAGS = -isystem /usr/include/x86_64-linux-gnu/qt5
-QT_LIBS = -lQt5Gui -lQt5Core -lQt5Widgets -lQt5PrintSupport -lQt5OpenGL -L/usr/lib/x86_64-linux-gnu
-QTENV_LDFLAGS = -Wl,-rpath=/usr/lib/x86_64-linux-gnu
+SYS_LIBS = -ldl -lstdc++ 
+QT_CFLAGS = 
+QT_LIBS = 
+QTENV_LDFLAGS = 
 OSG_CFLAGS = 
-OSG_LIBS = -losg -losgDB -losgGA -losgViewer -losgUtil -lOpenThreads
+OSG_LIBS = 
 OSGEARTH_CFLAGS = 
 OSGEARTH_LIBS = 
 ZLIB_CFLAGS = 
 ZLIB_LIBS = 
-OPENMP_FLAGS = 
-MPI_CFLAGS = -I/usr/lib/x86_64-linux-gnu/openmpi/include -I/usr/lib/x86_64-linux-gnu/openmpi/include/openmpi -I/home/praneeth/git/simbricks/lib
-MPI_LIBS = -L/usr/lib/x86_64-linux-gnu/openmpi/lib -lmpi_cxx -lmpi -lopen-pal -L/home/praneeth/git/simbricks/lib/simbricks/base/ -lbase -L/home/praneeth/git/simbricks/lib/simbricks/nicif/ -lnicif -L/home/praneeth/git/simbricks/lib/simbricks/network/ -lnetwork
+OPENMP_FLAGS = -fopenmp
+MPI_CFLAGS = -I/local/praneethbala/include -pthread -I/homes/praneethbala/simbricks/lib
+MPI_LIBS = -pthread -L/local/praneethbala/lib -L/homes/praneethbala/simbricks/lib -Wl,-rpath -Wl,/local/praneethbala/lib -Wl,-rpath -Wl,/homes/praneethbala/simbricks/lib -Wl,--enable-new-dtags -lmpi -lopen-pal -lsimbricks
 PTHREAD_CFLAGS = 
 PTHREAD_LIBS = -lpthread
 LIBXML_CFLAGS = 

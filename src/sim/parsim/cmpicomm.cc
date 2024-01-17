@@ -136,7 +136,7 @@ void cMPICommunications::send(cCommBuffer *buffer, int tag, int destination)
     cMPICommBuffer *b = (cMPICommBuffer *)buffer;
     // Note: we must use *buffered* send, otherwise we may block here and
     // cause deadlock
-    int status = MPI_Bsend(b->getBuffer(), b->getMessageSize(), MPI_PACKED, destination, tag, MPI_COMM_WORLD);
+    int status = MPI_Send(b->getBuffer(), b->getMessageSize(), MPI_PACKED, destination, tag, MPI_COMM_WORLD);
     if (status != MPI_SUCCESS)
         throw cRuntimeError("cMPICommunications::send(): MPI error %d", status);
 }

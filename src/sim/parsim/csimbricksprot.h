@@ -25,6 +25,9 @@
 #include <vector>
 #include <simbricks/base/cxxatomicfix.h>
 #include <unistd.h>
+#include <iostream>
+#include <fstream>
+
 extern "C" {
 #include <simbricks/network/if.h>
 #include <simbricks/network/proto.h>
@@ -45,7 +48,11 @@ class SIM_API cSimbricksProtocol : public cParsimSynchronizer
     cNMPLookahead *lookaheadcalc;
     cMemCommBuffer *buffer;
     static std::map<uint32_t, SimbricksNetIf*> m_nsif;
+    static std::map<uint32_t, SimbricksProtoNetIntro*> m_net_intro;
     static std::map<uint32_t, SimbricksBaseIfParams*> m_bifparam;
+    static std::map<uint32_t, SimbricksBaseIfSHMPool*> m_pool;
+    static struct SimBricksBaseIfEstablishData *ests;
+    static unsigned n_bifs;
     static std::string m_dir;
 
     /**
@@ -89,6 +96,7 @@ class SIM_API cSimbricksProtocol : public cParsimSynchronizer
     void packOptions(cCommBuffer *buffer, const SendOptions& options);
     virtual void processOutgoingMessage(cMessage *msg, const SendOptions& options, int procId, int moduleId, int gateId, void *data) override;
     virtual void SetupInterconnections ();
+    virtual void threadFunc (int i);
     virtual void SendSyncEvent (int systemId, simtime_t at);
     virtual uint8_t Poll (int systemId);
     virtual void ReceivedPacket (const void *buf, size_t len, int systemId);

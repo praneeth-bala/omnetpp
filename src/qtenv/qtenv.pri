@@ -5,7 +5,7 @@
 # tells Qt Creator the relevant defines, so it can highlight
 # and index the code accordingly during development.
 
-WITH_OSG = yes
+WITH_OSG = no
 equals(WITH_OSG, yes) {
   DEFINES += WITH_OSG
 }

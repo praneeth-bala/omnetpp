@@ -1,8 +1,8 @@
-/* A Bison parser, made by GNU Bison 3.8.2.  */
+/* A Bison parser, made by GNU Bison 3.5.1.  */
 
 /* Bison interface for Yacc-like parsers in C
 
-   Copyright (C) 1984, 1989-1990, 2000-2015, 2018-2021 Free Software Foundation,
+   Copyright (C) 1984, 1989-1990, 2000-2015, 2018-2020 Free Software Foundation,
    Inc.
 
    This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 /* As a special exception, you may create a larger work that contains
    part or all of the Bison parser skeleton and distribute that work
@@ -31,9 +31,8 @@
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
-/* DO NOT RELY ON FEATURES THAT ARE NOT DOCUMENTED in the manual,
-   especially those whose name start with YY_ or yy_.  They are
-   private implementation details that can be changed or removed.  */
+/* Undocumented macros, especially those whose name start with YY_,
+   are private implementation details.  Do not rely on them.  */
 
 #ifndef YY_MATCHEXPRESSIONYY_MATCHEXPRESSION_TAB_HH_INCLUDED
 # define YY_MATCHEXPRESSIONYY_MATCHEXPRESSION_TAB_HH_INCLUDED
@@ -45,28 +44,19 @@
 extern int matchexpressionyydebug;
 #endif
 
-/* Token kinds.  */
+/* Token type.  */
 #ifndef YYTOKENTYPE
 # define YYTOKENTYPE
   enum yytokentype
   {
-    YYEMPTY = -2,
-    YYEOF = 0,                     /* "end of file"  */
-    YYerror = 256,                 /* error  */
-    YYUNDEF = 257,                 /* "invalid token"  */
-    STRINGLITERAL = 258,           /* STRINGLITERAL  */
-    MATCHES = 259,                 /* MATCHES  */
-    OR_ = 260,                     /* OR_  */
-    AND_ = 261,                    /* AND_  */
-    NOT_ = 262                     /* NOT_  */
+    STRINGLITERAL = 258,
+    MATCHES = 259,
+    OR_ = 260,
+    AND_ = 261,
+    NOT_ = 262
   };
-  typedef enum yytokentype yytoken_kind_t;
 #endif
-/* Token kinds.  */
-#define YYEMPTY -2
-#define YYEOF 0
-#define YYerror 256
-#define YYUNDEF 257
+/* Tokens.  */
 #define STRINGLITERAL 258
 #define MATCHES 259
 #define OR_ 260
@@ -82,8 +72,6 @@ typedef int YYSTYPE;
 
 
 
-
 int matchexpressionyyparse (void *statePtr);
-
 
 #endif /* !YY_MATCHEXPRESSIONYY_MATCHEXPRESSION_TAB_HH_INCLUDED  */
